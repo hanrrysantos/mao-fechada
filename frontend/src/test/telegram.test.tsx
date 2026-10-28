@@ -1,5 +1,5 @@
 import { screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { dashboardRoutes, mockApi, renderApp } from './utils'
 
 describe('telegram connect', () => {
@@ -24,6 +24,25 @@ describe('telegram connect', () => {
     expect(calls.find((call) => call.method === 'POST')).toMatchObject({
       path: '/integracoes/telegram/vinculo', headers: { Authorization: 'Bearer tok-123' },
     })
+  })
+
+  it('prefers Telegram Web on desktop and keeps the app link as secondary', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(hover: hover) and (pointer: fine)' }))
+    const expiraEm = new Date(Date.now() + 10 * 60_000).toISOString()
+    mockApi({
+      ...dashboardRoutes(),
+      'POST /integracoes/telegram/vinculo': { body: { codigo: 'ABC123', expiraEm, link: 'https://t.me/cdg_bot?start=ABC123' } },
+    })
+    const { user } = renderApp('/')
+
+    await screen.findByText('Telegram')
+    await user.click(screen.getByRole('button', { name: 'Conectar Telegram' }))
+    const dialog = screen.getByRole('dialog', { name: 'Lance pelo Telegram' })
+    await user.click(within(dialog).getByRole('button', { name: 'Conectar Telegram' }))
+
+    expect(await within(dialog).findByRole('link', { name: 'Abrir no Telegram Web' })).toHaveAttribute('href',
+      'https://web.telegram.org/k/#?tgaddr=tg%3A%2F%2Fresolve%3Fdomain%3Dcdg_bot%26start%3DABC123')
+    expect(within(dialog).getByRole('link', { name: 'Abrir no app' })).toHaveAttribute('href', 'https://t.me/cdg_bot?start=ABC123')
   })
 
   it('falls back to the command when the API returns no link', async () => {
