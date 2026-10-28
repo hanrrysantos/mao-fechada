@@ -1,4 +1,4 @@
-# 💰 CDG — Sistema de Controle de Gastos
+# 💰 Mão Fechada: Sistema de Controle de Gastos
 
 ![Java](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=java)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-4-green?style=for-the-badge&logo=spring)
@@ -11,7 +11,7 @@ Sistema web **Fullstack** desenvolvido para facilitar o controle financeiro pess
 
 ## 🧭 Visão Geral
 
-O **CDG (Controle de Gastos)** é uma aplicação focada na organização financeira pessoal. Diferente de planilhas complexas, ele oferece uma interface limpa onde cada usuário possui seu próprio ambiente isolado (**Multi-Tenant**) para lançar seus gastos.
+O **Mão Fechada** é uma aplicação focada na organização financeira pessoal. Diferente de planilhas complexas, ele oferece uma interface limpa onde cada usuário possui seu próprio ambiente isolado (**Multi-Tenant**) para lançar seus gastos.
 
 O sistema garante a segurança dos dados através de autenticação via Token e oferece feedback visual imediato sobre a saúde financeira do usuário.
 
