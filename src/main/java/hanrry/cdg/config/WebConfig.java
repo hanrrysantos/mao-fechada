@@ -1,5 +1,6 @@
 package hanrry.cdg.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -7,6 +8,12 @@ import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+    private final String webBaseUrl;
+
+    public WebConfig(@Value("${api.web.base-url:http://localhost:5173}") String webBaseUrl) {
+        this.webBaseUrl = webBaseUrl;
+    }
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
@@ -16,7 +23,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("*")
+                .allowedOrigins(webBaseUrl)
                 .allowedHeaders("*")
                 .allowedMethods("GET", "PUT", "POST", "PATCH", "DELETE", "OPTIONS");
     }

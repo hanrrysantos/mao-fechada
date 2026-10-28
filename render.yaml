@@ -1,0 +1,50 @@
+databases:
+  - name: mao-fechada-db
+    plan: free
+    region: virginia
+    databaseName: controle_de_gastos
+    postgresMajorVersion: "17"
+
+services:
+  - type: web
+    name: mao-fechada-api
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: main
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: mao-fechada-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: mao-fechada-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: mao-fechada-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: mao-fechada-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: mao-fechada-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JPA_SHOW_SQL
+        value: "false"
+      - key: CDG_WEB_URL
+        value: https://mao-fechada.vercel.app
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_BOT_USERNAME
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
