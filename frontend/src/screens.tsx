@@ -779,7 +779,7 @@ export function AuthPage({ mode, onLogin, notify }: { mode: 'login' | 'register'
 
   return (
     <div className="app-shell auth-shell">
-      <header className="auth-hero"><span className="brand">cdg.</span><h1>{isLogin ? 'Suas finanças,\nmais claras.' : 'Comece a cuidar\ndo seu dinheiro.'}</h1>
+      <header className="auth-hero"><span className="brand">Mão Fechada</span><h1>{isLogin ? 'Suas finanças,\nmais claras.' : 'Comece a cuidar\ndo seu dinheiro.'}</h1>
         <div className="auth-hero-card" aria-hidden="true">
           <span>Saldo do mês</span>
           <strong>R$ 3.240,00</strong>
