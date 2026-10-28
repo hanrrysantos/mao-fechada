@@ -140,9 +140,9 @@ public class TelegramLinkService {
     @Transactional
     public void vincular(String codigo, Long telegramUserId) {
         User user = userRepository.findByTelegramLinkTokenHash(hash(codigo))
-                .orElseThrow(() -> new BusinessRuleException("Código inválido ou expirado. Gere outro código no CDG."));
+                .orElseThrow(() -> new BusinessRuleException("Código inválido ou expirado. Gere outro código no Mão Fechada."));
         if (user.getTelegramLinkExpiresAt() == null || !user.getTelegramLinkExpiresAt().isAfter(Instant.now())) {
-            throw new BusinessRuleException("Código inválido ou expirado. Gere outro código no CDG.");
+            throw new BusinessRuleException("Código inválido ou expirado. Gere outro código no Mão Fechada.");
         }
         User anterior = userRepository.findByTelegramUserId(telegramUserId).orElse(null);
         if (anterior != null) {
