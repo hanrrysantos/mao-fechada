@@ -1,163 +1,95 @@
-# 💰 Mão Fechada: Sistema de Controle de Gastos
+# 💰 Mão Fechada
 
-![Java](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=java)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-4-green?style=for-the-badge&logo=spring)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
-![React](https://img.shields.io/badge/React-TypeScript-blue?style=for-the-badge&logo=react)
+Controle de gastos pessoais pelo navegador e pelo Telegram. Envie uma mensagem como **“gastei R$ 32,50 no almoço”**, confira a interpretação do bot e confirme para ver o lançamento no dashboard.
 
-Sistema web **Fullstack** desenvolvido para facilitar o controle financeiro pessoal, permitindo gerenciar receitas e despesas, organizar categorias e visualizar o saldo em tempo real através de um dashboard intuitivo.
+<p align="center">
+  <img src="docs/images/telegram.png" alt="Bot do Mão Fechada confirmando um gasto no Telegram" height="440">
+  <img src="docs/images/dashboard.png" alt="Dashboard do Mão Fechada no celular" height="440">
+</p>
 
----
+## O que o projeto faz
 
-## 🧭 Visão Geral
+- Registra, edita e exclui receitas e despesas, com histórico e saldo atualizado.
+- Organiza lançamentos em categorias e acompanha metas mensais de despesa.
+- Mostra resumo do mês, comparação com o mês anterior e gastos por categoria.
+- Interpreta mensagens pelo Gemini no Telegram e pede confirmação antes de salvar.
+- Abre o dashboard como Telegram Mini App, com validação dos dados assinados pelo Telegram.
+- Mantém os dados de cada conta isolados por autenticação JWT.
 
-O **Mão Fechada** é uma aplicação focada na organização financeira pessoal. Diferente de planilhas complexas, ele oferece uma interface limpa onde cada usuário possui seu próprio ambiente isolado (**Multi-Tenant**) para lançar seus gastos.
+## Tecnologias
 
-O sistema garante a segurança dos dados através de autenticação via Token e oferece feedback visual imediato sobre a saúde financeira do usuário.
+| Camada | Tecnologias |
+| --- | --- |
+| Frontend | React, TypeScript, Vite, CSS, Lucide |
+| API | Java 21, Spring Boot 4, Spring Security, Spring Data JPA, MapStruct |
+| Dados | PostgreSQL 17 |
+| Integrações | Telegram Bot API, Gemini API |
 
----
+## Executar localmente
 
-## 🚀 Funcionalidades Principais
+Você precisa de **Docker Compose**, **Node.js** e **npm**. Na raiz do projeto, inicie a API e o PostgreSQL:
 
-- 🔒 **Autenticação Segura:** Login e Cadastro de usuários com JWT (JSON Web Token).
-- 💸 **Gestão de Transações:** Lançamento de Receitas e Despesas com data e descrição.
-- 🏷️ **Categorias Personalizadas:** O usuário cria suas próprias categorias (ex: Alimentação, Lazer, Salário).
-- 🎯 **Metas por Categoria:** Categorias de despesa podem ter um limite mensal, acompanhado na Visão geral.
-- 📊 **Dashboard Dinâmico:** Cálculo automático de saldo, total de entradas e saídas.
-- 🤖 **Registro pelo Telegram:** Mensagens de texto são interpretadas, confirmadas no chat e aparecem no dashboard.
-- 📄 **Extrato Detalhado:** Histórico visual de lançamentos com indicadores de cor (Verde/Vermelho).
-- 🗑️ **Controle Total:** Possibilidade de excluir lançamentos errados (Lixeira).
-- 🛡️ **Segurança de Dados:** Senhas criptografadas (BCrypt) e dados isolados por usuário.
+```bash
+docker compose up --build -d
+```
 
----
+Em outro terminal, inicie a interface:
 
-## 🛠️ Tecnologias Utilizadas
-
-### 🌐 Frontend
-- **React + TypeScript + Vite** - Interface mobile para navegador, com consumo da API via `fetch`.
-- **CSS próprio + Lucide** - Layout baseado no design B.
-
-### ⚙️ Backend
-- **Java 21**
-- **Spring Boot 4**
-- **Spring Security** (Autenticação e Autorização)
-- **Spring Data JPA** (Persistência de dados)
-- **MapStruct** (Mapeamento inteligente de DTOs)
-- **Maven** (Gerenciamento de dependências)
-
-### 🗄️ Banco de Dados
-- **PostgreSQL** - Banco de dados relacional.
-
----
-
-## 🧩 Arquitetura
-
-O projeto segue o padrão em camadas (**Layered Architecture**) para garantir desacoplamento e fácil manutenção:
-
-1. **Controller:** Exposição dos endpoints REST (`/auth`, `/transacoes`, `/categorias`).
-2. **Service:** Regras de negócio, validações e cálculos.
-3. **Repository:** Camada de acesso a dados (JPA/Hibernate).
-4. **Security:** Filtros de segurança (CORS e JWT).
-
----
-
-## 💾 Instalação e Execução
-
-### Pré-requisitos
-- Java 21 instalado.
-- PostgreSQL rodando (local ou Docker).
-- Maven.
-- Node.js e npm.
-
-### 1. Execute a API
-Na raiz, execute `docker compose up --build -d` para iniciar API e banco. O frontend continua separado: use `cd frontend && npm install && npm run dev`. Para rodar a API fora do Docker, defina `DB_PASSWORD` e `JWT_SECRET` e execute `bash mvnw spring-boot:run`.
-
-### 2. Execute o frontend
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Abra `http://localhost:5173`. Para rodar os testes do frontend, use `npm test`; os da API rodam com `bash mvnw test` (o `CdgApplicationTests` precisa do PostgreSQL ativo). Durante o desenvolvimento, o Vite encaminha `/api` para `http://localhost:8080`. Para outra porta local, use `CDG_API_PROXY` conforme o [README do frontend](frontend/README.md). O login recebe `token` e `nome`; o token expira após 24 horas e a sessão do navegador é guardada por aba. A API devolve valores monetários como texto decimal para preservar os centavos no navegador.
 
-### 3. Conecte o Telegram
-Configure `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_BOT_USERNAME` (nome do bot, sem `@`) e `GEMINI_API_KEY` no ambiente da API. `GEMINI_MODEL` é opcional e aceita uma lista separada por vírgulas (padrão `gemini-3.5-flash-lite,gemini-3.1-flash-lite`); se um modelo estiver sobrecarregado ou fora do ar, a API tenta o próximo. `CDG_WEB_URL` deve apontar para a URL HTTPS pública do frontend, sem barra final. Cadastre no Telegram o webhook público `POST /integracoes/telegram/webhook` usando o mesmo segredo em `secret_token`.
+Acesse **http://localhost:5173**. O Vite encaminha `/api` para a API em `http://localhost:8080`. Se ela estiver em outra porta, use `CDG_API_PROXY=http://localhost:8081 npm run dev`. Para uma API pública, configure `VITE_API_URL` conforme o [README do frontend](frontend/README.md).
 
-Entre no navegador, toque no botão **Telegram** no topo da Visão geral e depois em **Conectar Telegram**. Com `TELEGRAM_BOT_USERNAME` configurado, o botão **Abrir no Telegram** leva direto ao bot com o código preenchido; basta tocar em **Iniciar**. Sem ele, envie o comando `/start <código>` mostrado na tela em uma conversa privada com o bot. A tela confirma a conexão sozinha. O código vale por 10 minutos. Se o bot já tiver criado uma conta sem e-mail, os lançamentos dela passam para a conta vinculada. Se estiver ligado a outro e-mail, os dados antigos permanecem naquela conta e os novos lançamentos passam a entrar na conta recém-vinculada.
+Para executar a API sem Docker, use Java 21 e PostgreSQL, defina `DB_PASSWORD` e `JWT_SECRET` e rode `bash mvnw spring-boot:run`. As variáveis `DB_HOST`, `DB_PORT`, `DB_NAME` e `DB_USER` permitem alterar a conexão padrão.
 
-Depois, envie uma mensagem como `gastei R$ 32,50 no almoço`, confira os dados que o bot devolveu e toque em **Confirmar**. O lançamento aparecerá no dashboard e no extrato ao recarregar a página. **Cancelar** não registra a transação. O botão **Abrir dashboard** enviado pelo bot abre o mesmo frontend como Mini App e valida a identidade assinada pelo Telegram.
+### Integrar com o Telegram
 
-Em bancos criados antes da mudança para `BigDecimal`, execute [scripts/migrate-telegram-money.sql](scripts/migrate-telegram-money.sql) uma vez para converter o valor das confirmações pendentes em `DECIMAL(19,2)`. Em um banco novo, a tabela já nasce com esse tipo.
+Defina estas variáveis no ambiente da API antes de iniciá-la:
 
-## 💾 Estrutura de Dados
+| Variável | Uso |
+| --- | --- |
+| `TELEGRAM_BOT_TOKEN` | Token do bot |
+| `TELEGRAM_WEBHOOK_SECRET` | Segredo enviado pelo Telegram ao webhook |
+| `TELEGRAM_BOT_USERNAME` | Nome do bot sem `@`, para gerar o link de conexão |
+| `GEMINI_API_KEY` | Chave da API Gemini para interpretar mensagens |
+| `CDG_WEB_URL` | URL HTTPS pública do frontend, sem barra final |
 
-### 👤 Usuário (User)
-Representa a conta de acesso ao sistema.
+`GEMINI_MODEL` é opcional e aceita modelos separados por vírgula. A API tenta o próximo em falhas temporárias ou de conexão. Configure no Telegram o webhook público `POST /integracoes/telegram/webhook` com `secret_token` igual a `TELEGRAM_WEBHOOK_SECRET`.
 
-| Campo | Tipo | Descrição |
-| :--- | :--- | :--- |
-| `id` | `Long` | Identificador único (Auto Incremento) |
-| `nome` | `String` | Nome completo do usuário |
-| `email` | `String` | E-mail de login (Chave Única) |
-| `senha` | `String` | Senha criptografada (BCrypt) |
-| `categorias` | `List` | Lista de categorias criadas pelo usuário |
-| `transacoes` | `List` | Histórico de transações do usuário |
+No dashboard, abra **Telegram → Conectar Telegram**. Use **Abrir no Telegram** ou envie `/start <código>` ao bot em uma conversa privada; o código expira em 10 minutos. Depois, envie um gasto ou receita e toque em **Confirmar** para salvar, ou **Cancelar** para descartar. O botão **Abrir dashboard** no bot abre a Mini App.
 
-### 🏷️ Categoria
-Classificação para organizar as receitas e despesas (ex: Alimentação, Salário).
+Se o bot já tiver criado uma conta sem e-mail, os lançamentos dela passam para a conta vinculada. Se ele estava ligado a outra conta com e-mail, os dados antigos permanecem nela e os novos lançamentos passam a entrar na conta recém-vinculada.
 
-| Campo | Tipo | Descrição |
-| :--- | :--- | :--- |
-| `id` | `Long` | Identificador único |
-| `nome` | `String` | Nome da categoria (ex: "Lazer") |
-| `tipo` | `Enum` | Define se é `RECEITA` ou `DESPESA` |
-| `usuario` | `User` | Relacionamento ManyToOne (Dono da categoria) |
+## API
 
-### 💸 Transação
-O registro financeiro propriamente dito (entrada ou saída de dinheiro).
+| Método | Rota | Função |
+| --- | --- | --- |
+| `POST` | `/auth/register`, `/auth/login` | Cadastro e login |
+| `POST` | `/auth/telegram/webapp` | Login na Mini App |
+| `GET`, `POST` | `/integracoes/telegram/vinculo` | Consultar vínculo e gerar código |
+| `POST` | `/integracoes/telegram/webhook` | Receber mensagens do bot |
+| `GET` | `/transacoes`, `/transacoes/dashboard`, `/transacoes/resumo?mes=AAAA-MM` | Histórico e resumos |
+| `POST` | `/transacoes` | Criar lançamento |
+| `PUT`, `DELETE` | `/transacoes/{id}` | Editar e excluir lançamento |
+| `GET`, `POST` | `/categorias` | Listar e criar categorias |
+| `PUT`, `DELETE` | `/categorias/{id}` | Editar e excluir categoria |
 
-| Campo | Tipo | Descrição |
-| :--- | :--- | :--- |
-| `id` | `Long` | Identificador único |
-| `valor` | `BigDecimal` | Valor monetário com duas casas decimais (`NUMERIC(19,2)` no PostgreSQL) |
-| `descricao` | `String` | Detalhe do gasto (ex: "Pizza de Sexta") |
-| `data` | `LocalDate` | Data em que ocorreu o lançamento |
-| `tipo` | `Enum` | Herda o tipo da categoria (Receita/Despesa) |
-| `categoria` | `Categoria` | Relacionamento ManyToOne (Vínculo) |
-| `usuario` | `User` | Relacionamento ManyToOne (Dono do dado) |
+Ao excluir uma categoria com lançamentos, informe `?moverPara={id}` para movê-los a outra categoria do mesmo tipo. Valores monetários são enviados pela API como texto decimal para preservar os centavos.
 
-## 🔌 Endpoints da API
+## Testes
 
-Documentação das rotas disponíveis na API REST.
+```bash
+bash mvnw test
+cd frontend && npm test
+```
 
-| Método | Rota | Descrição |
-|:---:|:---|:---|
-| `POST` | `/auth/register` | Criação de novo usuário |
-| `POST` | `/auth/login` | Autenticação (retorna token JWT e nome) |
-| `POST` | `/auth/telegram/webapp` | Autentica a Mini App com dados assinados pelo Telegram |
-| `GET/POST` | `/integracoes/telegram/vinculo` | Consulta o vínculo ou gera o código de conexão (com link `t.me` quando `TELEGRAM_BOT_USERNAME` está definido) |
-| `POST` | `/integracoes/telegram/webhook` | Recebe mensagens e confirmações do bot |
-| `GET` | `/transacoes/dashboard` | Retorna o resumo financeiro (Saldo, Receitas, Despesas) |
-| `GET` | `/transacoes/resumo?mes=AAAA-MM` | Resumo do mês: totais, comparação com o mês anterior, saldo acumulado e total por categoria |
-| `POST` | `/transacoes` | Cria nova receita ou despesa |
-| `PUT` | `/transacoes/{id}` | Edita valor, descrição, data e categoria de um lançamento |
-| `DELETE` | `/transacoes/{id}` | Remove um lançamento |
-| `GET` | `/categorias` | Lista as categorias cadastradas pelo usuário, com a quantidade de lançamentos de cada uma |
-| `POST` | `/categorias` | Cria uma categoria; `metaMensal` (opcional, só para despesas) define o limite de gastos do mês |
-| `PUT` | `/categorias/{id}` | Renomeia uma categoria e altera ou remove (`null`) a meta mensal; o tipo só muda se ela não tiver lançamentos |
-| `DELETE` | `/categorias/{id}?moverPara={id}` | Exclui uma categoria; se ela tiver lançamentos, `moverPara` indica outra categoria do mesmo tipo para recebê-los |
+O teste de inicialização `CdgApplicationTests` precisa do PostgreSQL ativo.
 
----
+## Autor
 
-## 🧠 Autor
+**Hanrry Santos** · [GitHub](https://github.com/hanrrysantos) · [LinkedIn](https://www.linkedin.com/in/hanrrysantos)
 
-**Hanrry** Desenvolvedor Backend Java em formação | Foco em Spring Boot e Arquitetura de Software
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/hanrrysantos)
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/hanrrysantos)
-
----
-
-## 📜 Licença
-
-Este projeto é de uso livre para fins de estudo e portfólio.
+Projeto de estudo e portfólio.
