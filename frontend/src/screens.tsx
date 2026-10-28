@@ -135,6 +135,21 @@ function useTransactions() {
   return { items, setItems, error }
 }
 
+// Converte o link t.me/<bot>?start=<código> no deep link equivalente do Telegram Web.
+const telegramWebLink = (link: string) => {
+  try {
+    const url = new URL(link)
+    if (url.hostname !== 't.me') return null
+    const params = new URLSearchParams({ domain: url.pathname.slice(1) })
+    const start = url.searchParams.get('start')
+    if (start) params.set('start', start)
+    return 'https://web.telegram.org/k/#?tgaddr=' + encodeURIComponent('tg://resolve?' + params)
+  } catch {
+    return null
+  }
+}
+const isDesktop = () => window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false
+
 function TelegramConnect() {
   const { session, onUnauthorized, notify } = useScreen()
   const [linked, setLinked] = useState<boolean | null>(null)
@@ -143,7 +158,9 @@ function TelegramConnect() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [expired, setExpired] = useState(false)
+  const [desktop] = useState(isDesktop)
   const dialog = useRef<HTMLDialogElement>(null)
+  const webLink = desktop && pending?.link ? telegramWebLink(pending.link) : null
 
   useEffect(() => {
     if (!pending) return
@@ -237,7 +254,10 @@ function TelegramConnect() {
         <h2 id="telegram-title">Confirme no Telegram</h2>
         {pending.link ? <>
           <p>Abra o bot e toque em <strong>Iniciar</strong>. Esta tela atualiza sozinha quando a conexão for confirmada.</p>
-          <a className="primary-button telegram-open" href={pending.link} target="_blank" rel="noreferrer"><ExternalLink size={18} /> Abrir no Telegram</a>
+          {webLink ? <>
+            <a className="primary-button telegram-open" href={webLink} target="_blank" rel="noreferrer"><ExternalLink size={18} /> Abrir no Telegram Web</a>
+            <p className="sheet-app-link">Tem o app instalado? <a className="inline-link" href={pending.link} target="_blank" rel="noreferrer">Abrir no app</a></p>
+          </> : <a className="primary-button telegram-open" href={pending.link} target="_blank" rel="noreferrer"><ExternalLink size={18} /> Abrir no Telegram</a>}
           <p className="sheet-fallback">Ou envie este comando no chat privado com o bot:</p>
         </> : <p>Envie este comando no chat privado com o bot. Esta tela atualiza sozinha quando a conexão for confirmada.</p>}
         <div className="command-box"><code>/start {pending.codigo}</code><button type="button" onClick={copyCommand} aria-label="Copiar comando"><Copy size={17} /></button></div>

@@ -219,6 +219,7 @@
 .sheet-steps span { flex: 0 0 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; color: var(--accent); background: var(--accent-soft); font-size: 12px; font-weight: 600; }
 .telegram-open { background: linear-gradient(135deg, #37aee2, #1e96c8); box-shadow: 0 10px 24px #229ed940; }
 .sheet .sheet-fallback { margin: 18px 0 8px; font-size: 12px; }
+.sheet .sheet-app-link { margin: 10px 0 0; font-size: 12px; text-align: center; }
 .command-box { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2); }
 .command-box code { min-width: 0; flex: 1; font-size: 12px; overflow-wrap: anywhere; user-select: all; }
 .command-box button { flex: 0 0 38px; height: 38px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 10px; color: var(--accent); background: var(--surface); }
