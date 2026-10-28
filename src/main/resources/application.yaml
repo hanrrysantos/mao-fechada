@@ -1,10 +1,12 @@
+server:
+  port: ${PORT:8080}
 spring:
   application:
     name: cdg
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:controle_de_gastos}?useTimezone=true&serverTimezone=UTC
-    username: ${DB_USER:root}
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:controle_de_gastos}
+    username: ${DB_USER:postgres}
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
@@ -12,7 +14,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
-    show-sql: true
+        jdbc:
+          time_zone: UTC
+    show-sql: ${JPA_SHOW_SQL:true}
     open-in-view: false
 api:
   web:

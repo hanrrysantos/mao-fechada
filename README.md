@@ -2,7 +2,7 @@
 
 ![Java](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=java)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-4-green?style=for-the-badge&logo=spring)
-![MySQL](https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![React](https://img.shields.io/badge/React-TypeScript-blue?style=for-the-badge&logo=react)
 
 Sistema web **Fullstack** desenvolvido para facilitar o controle financeiro pessoal, permitindo gerenciar receitas e despesas, organizar categorias e visualizar o saldo em tempo real através de um dashboard intuitivo.
@@ -46,7 +46,7 @@ O sistema garante a segurança dos dados através de autenticação via Token e 
 - **Maven** (Gerenciamento de dependências)
 
 ### 🗄️ Banco de Dados
-- **MySQL** - Banco de dados relacional.
+- **PostgreSQL** - Banco de dados relacional.
 
 ---
 
@@ -65,7 +65,7 @@ O projeto segue o padrão em camadas (**Layered Architecture**) para garantir de
 
 ### Pré-requisitos
 - Java 21 instalado.
-- MySQL rodando (local ou Docker).
+- PostgreSQL rodando (local ou Docker).
 - Maven.
 - Node.js e npm.
 
@@ -78,7 +78,7 @@ cd frontend
 npm install
 npm run dev
 ```
-Abra `http://localhost:5173`. Para rodar os testes do frontend, use `npm test`; os da API rodam com `bash mvnw test` (o `CdgApplicationTests` precisa do MySQL ativo). Durante o desenvolvimento, o Vite encaminha `/api` para `http://localhost:8080`. Para outra porta local, use `CDG_API_PROXY` conforme o [README do frontend](frontend/README.md). O login recebe `token` e `nome`; o token expira após 24 horas e a sessão do navegador é guardada por aba. A API devolve valores monetários como texto decimal para preservar os centavos no navegador.
+Abra `http://localhost:5173`. Para rodar os testes do frontend, use `npm test`; os da API rodam com `bash mvnw test` (o `CdgApplicationTests` precisa do PostgreSQL ativo). Durante o desenvolvimento, o Vite encaminha `/api` para `http://localhost:8080`. Para outra porta local, use `CDG_API_PROXY` conforme o [README do frontend](frontend/README.md). O login recebe `token` e `nome`; o token expira após 24 horas e a sessão do navegador é guardada por aba. A API devolve valores monetários como texto decimal para preservar os centavos no navegador.
 
 ### 3. Conecte o Telegram
 Configure `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_BOT_USERNAME` (nome do bot, sem `@`) e `GEMINI_API_KEY` no ambiente da API. `GEMINI_MODEL` é opcional e aceita uma lista separada por vírgulas (padrão `gemini-3.5-flash-lite,gemini-3.1-flash-lite`); se um modelo estiver sobrecarregado ou fora do ar, a API tenta o próximo. `CDG_WEB_URL` deve apontar para a URL HTTPS pública do frontend, sem barra final. Cadastre no Telegram o webhook público `POST /integracoes/telegram/webhook` usando o mesmo segredo em `secret_token`.
@@ -119,7 +119,7 @@ O registro financeiro propriamente dito (entrada ou saída de dinheiro).
 | Campo | Tipo | Descrição |
 | :--- | :--- | :--- |
 | `id` | `Long` | Identificador único |
-| `valor` | `BigDecimal` | Valor monetário com duas casas decimais (`DECIMAL(19,2)` no MySQL) |
+| `valor` | `BigDecimal` | Valor monetário com duas casas decimais (`NUMERIC(19,2)` no PostgreSQL) |
 | `descricao` | `String` | Detalhe do gasto (ex: "Pizza de Sexta") |
 | `data` | `LocalDate` | Data em que ocorreu o lançamento |
 | `tipo` | `Enum` | Herda o tipo da categoria (Receita/Despesa) |
