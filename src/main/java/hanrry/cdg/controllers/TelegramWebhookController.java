@@ -92,12 +92,12 @@ public class TelegramWebhookController {
             } else if (parts.length == 2) {
                 try {
                     linkService.vincular(parts[1], telegramUserId);
-                    enviarAcessoDashboard(chatId, "🔗 Telegram conectado à sua conta CDG!\nAgora seus lançamentos aparecem no dashboard. 🎉");
+                    enviarAcessoDashboard(chatId, "🔗 Telegram conectado à sua conta do Mão Fechada!\nAgora seus lançamentos aparecem no dashboard. 🎉");
                 } catch (BusinessRuleException e) {
                     responder(chatId, "⚠️ " + e.getMessage(), null);
                 }
             } else {
-                responder(chatId, "ℹ️ Para começar, envie /start. Para conectar sua conta CDG, envie /start seguido do código exibido no dashboard.", null);
+                responder(chatId, "ℹ️ Para começar, envie /start. Para conectar sua conta do Mão Fechada, envie /start seguido do código exibido no dashboard.", null);
             }
         } else if (command.equals("/dashboard") || command.equals("/painel")) {
             String nome = (message.path("from").path("first_name").asText("") + " " +
