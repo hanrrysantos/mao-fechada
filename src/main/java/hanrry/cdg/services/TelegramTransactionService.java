@@ -162,7 +162,7 @@ public class TelegramTransactionService {
         transacao.setUser(user);
         transacaoRepository.save(transacao);
         pendingRepository.delete(pendente);
-        return "✅ Lançamento salvo no CDG!\nEle já está no seu dashboard 📊";
+        return "✅ Lançamento salvo no Mão Fechada!\nEle já está no seu dashboard 📊";
     }
 
     @Transactional
