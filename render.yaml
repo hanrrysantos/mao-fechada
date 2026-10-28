@@ -13,6 +13,7 @@ services:
     region: virginia
     branch: main
     dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
     envVars:
       - key: DB_HOST
         fromDatabase:
