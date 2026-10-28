@@ -1,4 +1,4 @@
-# Frontend do Controle de Gastos
+# Frontend do Mão Fechada
 
 Interface mobile para navegador, feita com React, TypeScript e Vite.
 
