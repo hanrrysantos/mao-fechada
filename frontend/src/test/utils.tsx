@@ -55,6 +55,13 @@ export const currentMonth = () => {
 /** Routes the dashboard needs on load. */
 export const dashboardRoutes = () => ({
   ['GET /transacoes/resumo?mes=' + currentMonth()]: { body: emptyResumo(currentMonth()) },
-  'GET /transacoes': { body: [] },
+  'GET /transacoes?pagina=0&tamanho=4': { body: { itens: [], temMais: false } },
+  ['GET /transacoes/periodo?inicio=' + isoDay(-6) + '&fim=' + isoDay(0)]: { body: { itens: [], temAnteriores: false } },
   'GET /integracoes/telegram/vinculo': { body: { vinculado: false } },
 })
+
+const isoDay = (offset: number) => {
+  const date = new Date()
+  date.setDate(date.getDate() + offset)
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-')
+}

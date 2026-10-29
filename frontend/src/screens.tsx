@@ -5,7 +5,7 @@ import {
   CircleCheck, Copy, ExternalLink, Eye, EyeOff, Gamepad2, GraduationCap, HeartPulse, House, LogOut, Mail,
   PencilLine, PiggyBank, Plus, Send, Tag, Target, Trash2, UserRound, Utensils, X, type LucideIcon,
 } from 'lucide-react'
-import { api, ApiError, type Categoria, type ResumoCategoria, type ResumoMensal, type Sessao, type Tipo, type Transacao, type VinculoTelegram } from './api'
+import { api, ApiError, type Categoria, type PaginaTransacoes, type PeriodoTransacoes, type ResumoCategoria, type ResumoMensal, type Sessao, type Tipo, type Transacao, type VinculoTelegram } from './api'
 import type { ScreenContext } from './App'
 
 const money = (value: string) => {
@@ -43,7 +43,6 @@ const shiftMonth = (month: string, offset: number) => {
 }
 const monthName = (month: string, format: 'long' | 'short' = 'long') => new Date(month + '-01T12:00:00').toLocaleDateString('pt-BR', { month: format }).replace('.', '')
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
-const recentFirst = (items: Transacao[]) => [...items].sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id)
 
 function useScreen() {
   return useOutletContext<ScreenContext>()
@@ -119,20 +118,41 @@ function useResumo(month: string) {
   return state.month === month ? state : { month, data: null, error: '' }
 }
 
-function useTransactions() {
+function useTransactions(size = 20) {
   const { session, onUnauthorized } = useScreen()
   const [items, setItems] = useState<Transacao[] | null>(null)
   const [error, setError] = useState('')
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [version, setVersion] = useState(0)
 
   useEffect(() => {
     let active = true
-    api<Transacao[]>('/transacoes', {}, session.token)
-      .then((result) => { if (active) setItems(recentFirst(result)) })
+    setItems(null)
+    setPage(0)
+    api<PaginaTransacoes>(`/transacoes?pagina=0&tamanho=${size}`, {}, session.token)
+      .then((result) => { if (active) { setItems(result.itens); setHasMore(result.temMais) } })
       .catch((err: unknown) => { if (active) requestError(err, onUnauthorized, setError) })
     return () => { active = false }
-  }, [session.token, onUnauthorized])
+  }, [session.token, onUnauthorized, size, version])
 
-  return { items, setItems, error }
+  async function loadMore() {
+    if (loadingMore || !hasMore) return
+    setLoadingMore(true)
+    try {
+      const result = await api<PaginaTransacoes>(`/transacoes?pagina=${page + 1}&tamanho=${size}`, {}, session.token)
+      setItems((current) => [...(current ?? []), ...result.itens])
+      setPage(page + 1)
+      setHasMore(result.temMais)
+    } catch (err) {
+      requestError(err, onUnauthorized, setError)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
+
+  return { items, error, hasMore, loadingMore, loadMore, reload: () => setVersion((value) => value + 1) }
 }
 
 // Converte o link t.me/<bot>?start=<código> no deep link equivalente do Telegram Web.
@@ -304,14 +324,35 @@ function Delta({ current, previous, inverse, month }: { current: string; previou
   return <small className={'delta ' + (good ? 'good' : 'bad')}>{change > 0 ? '+' : change < 0 ? '−' : ''}{Math.abs(change).toLocaleString('pt-BR')}% vs {monthName(shiftMonth(month, -1), 'short')}</small>
 }
 
-function FlowChart({ transactions }: { transactions: Transacao[] }) {
+function FlowChart() {
+  const { session, onUnauthorized } = useScreen()
   const [periodOffset, setPeriodOffset] = useState(0)
   const [selected, setSelected] = useState(6)
+  const [period, setPeriod] = useState<PeriodoTransacoes | null>(null)
+  const [error, setError] = useState('')
   const [anchor] = useState(() => {
     const date = new Date()
     date.setHours(12, 0, 0, 0)
     return date
   })
+  const start = new Date(anchor)
+  start.setDate(anchor.getDate() + periodOffset * 7 - 6)
+  const end = new Date(start)
+  end.setDate(start.getDate() + 6)
+  const startKey = isoDate(start)
+  const endKey = isoDate(end)
+
+  useEffect(() => {
+    let active = true
+    setPeriod(null)
+    setError('')
+    api<PeriodoTransacoes>(`/transacoes/periodo?inicio=${startKey}&fim=${endKey}`, {}, session.token)
+      .then((result) => { if (active) setPeriod(result) })
+      .catch((err: unknown) => { if (active) requestError(err, onUnauthorized, setError) })
+    return () => { active = false }
+  }, [startKey, endKey, session.token, onUnauthorized])
+
+  const transactions = period?.itens ?? []
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(anchor)
     date.setDate(anchor.getDate() + periodOffset * 7 - 6 + index)
@@ -327,7 +368,7 @@ function FlowChart({ transactions }: { transactions: Transacao[] }) {
   })
   const max = days.flatMap((day) => [day.income, day.expense]).reduce((current, amount) => amount > current ? amount : current, 0n)
   const height = (amount: bigint) => max === 0n || amount === 0n ? 4 : Math.max(6, Number(amount * 1200n / max) / 10)
-  const hasEarlier = transactions.some((item) => item.data < days[0].key)
+  const hasEarlier = period?.temAnteriores ?? false
   const day = days[selected]
   const balance = day.income - day.expense
 
@@ -338,6 +379,8 @@ function FlowChart({ transactions }: { transactions: Transacao[] }) {
 
   return (
     <section className="card flow-card" aria-labelledby="flow-title">
+      {error && <ErrorState message={error} />}
+      {!period && !error && <p className="loading">Carregando gráfico...</p>}
       <div className="section-heading">
         <h2 id="flow-title">Entradas e saídas</h2>
         <div className="week-nav" role="group" aria-label="Semana do gráfico">
@@ -436,7 +479,7 @@ export function DashboardPage({ onLogout }: { onLogout: () => void }) {
   const { session } = useScreen()
   const [month, setMonth] = useState(currentMonth)
   const resumo = useResumo(month)
-  const transactions = useTransactions()
+  const transactions = useTransactions(4)
   const error = resumo.error || transactions.error
   const data = resumo.data
   const spentPercent = data ? share(cents(data.totalDespesas), cents(data.totalReceitas)) : 0
@@ -478,13 +521,13 @@ export function DashboardPage({ onLogout }: { onLogout: () => void }) {
           </div>
           {data && <p className="accumulated">Saldo acumulado <strong>{money(data.saldoAcumulado)}</strong></p>}
         </section>
-        {transactions.items && <FlowChart transactions={transactions.items} />}
+        <FlowChart />
         {data && <SpendingDonut categories={data.categorias} month={month} />}
         {data && <GoalsCard categories={data.categorias} />}
         <section className="recent-section">
           <div className="section-heading"><h2>Últimos lançamentos</h2><Link to="/extrato">Ver todos <ArrowRight size={14} /></Link></div>
           {!transactions.items ? <p className="loading">Carregando lançamentos...</p> : transactions.items.length
-            ? transactions.items.slice(0, 4).map((item) => <TransactionRow key={item.id} item={item} />)
+            ? transactions.items.map((item) => <TransactionRow key={item.id} item={item} />)
             : <div className="empty-state"><p>Nenhum lançamento ainda.</p><Link to="/novo">Registrar o primeiro</Link></div>}
         </section>
       </>}
@@ -496,7 +539,7 @@ export function TransactionsPage() {
   const { session, onUnauthorized, notify } = useScreen()
   const month = currentMonth()
   const resumo = useResumo(month)
-  const { items, setItems, error } = useTransactions()
+  const { items, error, hasMore, loadingMore, loadMore, reload } = useTransactions()
   const [filter, setFilter] = useState<'TODAS' | Tipo>('TODAS')
   const [selected, setSelected] = useState<Transacao | null>(null)
   const [busy, setBusy] = useState(false)
@@ -514,7 +557,7 @@ export function TransactionsPage() {
     setDeleteError('')
     try {
       await api<void>('/transacoes/' + selected.id, { method: 'DELETE' }, session.token)
-      setItems((current) => current?.filter((item) => item.id !== selected.id) ?? null)
+      reload()
       setSelected(null)
       notify('Lançamento excluído.')
     } catch (err) {
@@ -557,6 +600,7 @@ export function TransactionsPage() {
           <div className="card list-card">{group.items.map((item) => <TransactionRow key={item.id} item={item} showDate={false} onDelete={(entry) => { setDeleteError(''); setSelected(entry) }} />)}</div>
         </section>)
         : <div className="empty-state"><p>Nenhum lançamento nesta seleção.</p><Link to="/novo">Registrar lançamento</Link></div>}
+      {items && hasMore && <button type="button" className="primary-button" onClick={loadMore} disabled={loadingMore}>{loadingMore ? 'Carregando...' : 'Carregar mais'}</button>}
       <dialog ref={dialog} className="confirm-dialog" onClose={() => setSelected(null)} aria-labelledby="delete-title">
         <span className="dialog-icon"><Trash2 size={23} /></span>
         <h2 id="delete-title">Excluir lançamento?</h2>
@@ -599,16 +643,11 @@ export function TransactionFormPage() {
 
   useEffect(() => {
     let active = true
-    Promise.all([api<Categoria[]>('/categorias', {}, session.token), id && !draft ? api<Transacao[]>('/transacoes', {}, session.token) : null])
-      .then(([result, transactions]) => {
+    Promise.all([api<Categoria[]>('/categorias', {}, session.token), id && !draft ? api<Transacao>('/transacoes/' + id, {}, session.token) : null])
+      .then(([result, item]) => {
         if (!active) return
         setCategories(result)
-        if (!transactions) return
-        const item = transactions.find((entry) => String(entry.id) === id)
-        if (!item) {
-          setLoadError('Lançamento não encontrado.')
-          return
-        }
+        if (!item) return
         setType(result.find((category) => category.id === item.categoriaId)?.tipo ?? item.tipo)
         setAmountDigits(cents(item.valor).toString().replace(/^0+/, ''))
         setDescription(item.descricao)
