@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.Map;
 import java.util.function.Function;
@@ -139,7 +140,7 @@ public class TransacaoService {
     public ResumoMensalResponseDTO getResumoMensal(String mes) {
         YearMonth periodo;
         try {
-            periodo = mes == null || mes.isBlank() ? YearMonth.now() : YearMonth.parse(mes);
+            periodo = mes == null || mes.isBlank() ? YearMonth.now(ZoneId.of("America/Sao_Paulo")) : YearMonth.parse(mes);
         } catch (DateTimeParseException e) {
             throw new BusinessRuleException("Informe o mês no formato AAAA-MM.");
         }
