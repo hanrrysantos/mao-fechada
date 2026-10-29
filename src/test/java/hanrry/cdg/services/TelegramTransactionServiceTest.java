@@ -147,7 +147,7 @@ class TelegramTransactionServiceTest {
     void confirmaPendenteComCategoriaExistente() {
         Categoria mercado = categoria(1L, "Mercado", TipoTransacao.DESPESA, usuario);
         TransacaoPendenteTelegram pendente = pendente("p1", TELEGRAM_ID, 1L, "Mercado", Instant.now().plusSeconds(60));
-        when(pendingRepository.findById("p1")).thenReturn(Optional.of(pendente));
+        when(pendingRepository.findByIdForUpdate("p1")).thenReturn(Optional.of(pendente));
         when(categoriaRepository.findById(1L)).thenReturn(Optional.of(mercado));
 
         String resposta = service.confirmar("p1", TELEGRAM_ID);
@@ -166,7 +166,7 @@ class TelegramTransactionServiceTest {
     @Test
     void confirmaCriandoCategoriaNova() {
         TransacaoPendenteTelegram pendente = pendente("p1", TELEGRAM_ID, null, "Delivery", Instant.now().plusSeconds(60));
-        when(pendingRepository.findById("p1")).thenReturn(Optional.of(pendente));
+        when(pendingRepository.findByIdForUpdate("p1")).thenReturn(Optional.of(pendente));
         when(categoriaRepository.findByUserId(7L)).thenReturn(List.of(categoria(9L, "Delivery", TipoTransacao.RECEITA, usuario)));
 
         service.confirmar("p1", TELEGRAM_ID);
@@ -183,7 +183,7 @@ class TelegramTransactionServiceTest {
     void confirmaReaproveitandoCategoriaCriadaDepoisDaPreparacao() {
         Categoria delivery = categoria(3L, "delivery", TipoTransacao.DESPESA, usuario);
         TransacaoPendenteTelegram pendente = pendente("p1", TELEGRAM_ID, null, "Delivery", Instant.now().plusSeconds(60));
-        when(pendingRepository.findById("p1")).thenReturn(Optional.of(pendente));
+        when(pendingRepository.findByIdForUpdate("p1")).thenReturn(Optional.of(pendente));
         when(categoriaRepository.findByUserId(7L)).thenReturn(List.of(delivery));
 
         service.confirmar("p1", TELEGRAM_ID);
@@ -195,7 +195,7 @@ class TelegramTransactionServiceTest {
     @Test
     void confirmacaoExpiradaEDescartada() {
         TransacaoPendenteTelegram pendente = pendente("p1", TELEGRAM_ID, 1L, "Mercado", Instant.now().minusSeconds(1));
-        when(pendingRepository.findById("p1")).thenReturn(Optional.of(pendente));
+        when(pendingRepository.findByIdForUpdate("p1")).thenReturn(Optional.of(pendente));
 
         String resposta = service.confirmar("p1", TELEGRAM_ID);
 
@@ -206,9 +206,9 @@ class TelegramTransactionServiceTest {
 
     @Test
     void confirmacaoInexistenteOuDeOutroTelegramNaoSalva() {
-        when(pendingRepository.findById("nada")).thenReturn(Optional.empty());
+        when(pendingRepository.findByIdForUpdate("nada")).thenReturn(Optional.empty());
         TransacaoPendenteTelegram alheia = pendente("p1", 999L, 1L, "Mercado", Instant.now().plusSeconds(60));
-        when(pendingRepository.findById("p1")).thenReturn(Optional.of(alheia));
+        when(pendingRepository.findByIdForUpdate("p1")).thenReturn(Optional.of(alheia));
 
         assertTrue(service.confirmar("nada", TELEGRAM_ID).startsWith("⏳"));
         assertTrue(service.confirmar("p1", TELEGRAM_ID).startsWith("⏳"));
@@ -220,7 +220,7 @@ class TelegramTransactionServiceTest {
     @Test
     void confirmacaoComCategoriaDeOutroUsuarioEDescartada() {
         TransacaoPendenteTelegram pendente = pendente("p1", TELEGRAM_ID, 5L, "Lazer", Instant.now().plusSeconds(60));
-        when(pendingRepository.findById("p1")).thenReturn(Optional.of(pendente));
+        when(pendingRepository.findByIdForUpdate("p1")).thenReturn(Optional.of(pendente));
         when(categoriaRepository.findById(5L)).thenReturn(Optional.of(categoria(5L, "Lazer", TipoTransacao.DESPESA, usuario(8L))));
 
         assertTrue(service.confirmar("p1", TELEGRAM_ID).startsWith("⚠️"));
@@ -231,7 +231,7 @@ class TelegramTransactionServiceTest {
     @Test
     void confirmacaoComCategoriaApagadaEDescartada() {
         TransacaoPendenteTelegram pendente = pendente("p1", TELEGRAM_ID, 5L, "Lazer", Instant.now().plusSeconds(60));
-        when(pendingRepository.findById("p1")).thenReturn(Optional.of(pendente));
+        when(pendingRepository.findByIdForUpdate("p1")).thenReturn(Optional.of(pendente));
         when(categoriaRepository.findById(5L)).thenReturn(Optional.empty());
 
         assertTrue(service.confirmar("p1", TELEGRAM_ID).startsWith("⚠️"));
@@ -241,7 +241,7 @@ class TelegramTransactionServiceTest {
     @Test
     void confirmacaoSemContaVinculadaEDescartada() {
         TransacaoPendenteTelegram pendente = pendente("p1", TELEGRAM_ID, 1L, "Mercado", Instant.now().plusSeconds(60));
-        when(pendingRepository.findById("p1")).thenReturn(Optional.of(pendente));
+        when(pendingRepository.findByIdForUpdate("p1")).thenReturn(Optional.of(pendente));
         when(userRepository.findByTelegramUserId(TELEGRAM_ID)).thenReturn(Optional.empty());
 
         assertTrue(service.confirmar("p1", TELEGRAM_ID).startsWith("⚠️"));
@@ -254,7 +254,7 @@ class TelegramTransactionServiceTest {
     @Test
     void cancelaPendenteDoProprioTelegram() {
         TransacaoPendenteTelegram pendente = pendente("p1", TELEGRAM_ID, 1L, "Mercado", Instant.now().plusSeconds(60));
-        when(pendingRepository.findById("p1")).thenReturn(Optional.of(pendente));
+        when(pendingRepository.findByIdForUpdate("p1")).thenReturn(Optional.of(pendente));
 
         assertTrue(service.cancelar("p1", TELEGRAM_ID).startsWith("🗑️"));
         verify(pendingRepository).delete(pendente);
@@ -263,8 +263,8 @@ class TelegramTransactionServiceTest {
 
     @Test
     void naoCancelaPendenteDeOutroTelegramOuInexistente() {
-        when(pendingRepository.findById("p1")).thenReturn(Optional.of(pendente("p1", 999L, 1L, "Mercado", Instant.now().plusSeconds(60))));
-        when(pendingRepository.findById("nada")).thenReturn(Optional.empty());
+        when(pendingRepository.findByIdForUpdate("p1")).thenReturn(Optional.of(pendente("p1", 999L, 1L, "Mercado", Instant.now().plusSeconds(60))));
+        when(pendingRepository.findByIdForUpdate("nada")).thenReturn(Optional.empty());
 
         assertTrue(service.cancelar("p1", TELEGRAM_ID).startsWith("⏳"));
         assertTrue(service.cancelar("nada", TELEGRAM_ID).startsWith("⏳"));
