@@ -116,6 +116,9 @@ public class CategoriaService {
         if (dto.getNome() == null || dto.getNome().isBlank() || dto.getTipo() == null) {
             throw new BusinessRuleException("Preencha nome e tipo da categoria.");
         }
+        if (dto.getNome().length() > 255) {
+            throw new BusinessRuleException("O nome da categoria deve ter no máximo 255 caracteres.");
+        }
         BigDecimal meta = dto.getMetaMensal();
         if (meta == null) return;
         if (dto.getTipo() != TipoTransacao.DESPESA) {

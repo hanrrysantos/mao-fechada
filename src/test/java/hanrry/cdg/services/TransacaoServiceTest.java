@@ -114,6 +114,12 @@ class TransacaoServiceTest {
     }
 
     @Test
+    void recusaDescricaoMaiorQueAColunaDoBanco() {
+        assertThrows(BusinessRuleException.class, () -> service.criar(request("10.00", "a".repeat(256), 1L)));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
     void recusaCriarComCategoriaInexistente() {
         when(categoriaRepository.findById(1L)).thenReturn(Optional.empty());
 
