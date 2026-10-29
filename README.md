@@ -71,13 +71,19 @@ Se o bot já tiver criado uma conta sem e-mail, os lançamentos dela passam para
 | `POST` | `/auth/telegram/webapp` | Login na Mini App |
 | `GET`, `POST` | `/integracoes/telegram/vinculo` | Consultar vínculo e gerar código |
 | `POST` | `/integracoes/telegram/webhook` | Receber mensagens do bot |
-| `GET` | `/transacoes`, `/transacoes/dashboard`, `/transacoes/resumo?mes=AAAA-MM` | Histórico e resumos |
+| `GET` | `/transacoes`, `/transacoes/{id}`, `/transacoes/periodo`, `/transacoes/dashboard`, `/transacoes/resumo?mes=AAAA-MM` | Histórico paginado, lançamento e resumos |
 | `POST` | `/transacoes` | Criar lançamento |
 | `PUT`, `DELETE` | `/transacoes/{id}` | Editar e excluir lançamento |
 | `GET`, `POST` | `/categorias` | Listar e criar categorias |
 | `PUT`, `DELETE` | `/categorias/{id}` | Editar e excluir categoria |
 
 Ao excluir uma categoria com lançamentos, informe `?moverPara={id}` para movê-los a outra categoria do mesmo tipo. Valores monetários são enviados pela API como texto decimal para preservar os centavos.
+
+`GET /transacoes?pagina=0&tamanho=20` retorna `{ "itens": [...], "temMais": true/false }`, em ordem de data e ID decrescente. `tamanho` aceita de 1 a 50. `GET /transacoes/{id}` consulta um lançamento da conta autenticada; `GET /transacoes/periodo?inicio=AAAA-MM-DD&fim=AAAA-MM-DD` retorna os lançamentos de até 31 dias e indica se existem dias anteriores.
+
+## Banco de dados
+
+O Flyway aplica as migrações em `src/main/resources/db/migration` antes de iniciar a API. Em um banco vazio, ele cria o esquema completo. Em um banco já criado pelas versões anteriores, a primeira execução registra a versão 1 como base e aplica a partir da versão 2; faça um backup antes do primeiro deploy dessa mudança. O Hibernate valida o esquema na inicialização e não o altera automaticamente.
 
 ## Testes
 
@@ -86,7 +92,7 @@ bash mvnw test
 cd frontend && npm test
 ```
 
-O teste de inicialização `CdgApplicationTests` precisa do PostgreSQL ativo.
+Os testes de inicialização, confirmação concorrente e paginação precisam do PostgreSQL ativo.
 
 ## Autor
 
