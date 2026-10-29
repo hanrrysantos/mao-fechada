@@ -91,6 +91,9 @@ public class TransacaoService {
         if (dto.getCategoriaId() == null || dto.getData() == null || dto.getDescricao() == null || dto.getDescricao().isBlank()) {
             throw new BusinessRuleException("Preencha descrição, data e categoria.");
         }
+        if (dto.getDescricao().length() > 255) {
+            throw new BusinessRuleException("A descrição deve ter no máximo 255 caracteres.");
+        }
     }
 
     private Categoria buscarCategoria(Long categoriaId, User user) {
