@@ -18,6 +18,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.SliceImpl;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -136,20 +139,55 @@ class TransacaoServiceTest {
     }
 
     @Test
-    void listaApenasTransacoesDoUsuarioAutenticadoNaOrdemDaColecao() {
+    void listaPaginaDeTransacoesDoUsuarioAutenticado() {
         Categoria mercado = categoria(1L, "Mercado", TipoTransacao.DESPESA, usuario);
-        usuario.getTransacoes().add(transacao(10L, "30.00", usuario, mercado));
-        usuario.getTransacoes().add(transacao(11L, "12.50", usuario, mercado));
+        var pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "data", "id"));
+        when(repository.findByUserId(7L, pageable)).thenReturn(new SliceImpl<>(List.of(
+                transacao(11L, "12.50", usuario, mercado), transacao(10L, "30.00", usuario, mercado)), pageable, true));
 
-        List<TransacaoResponseDTO> lista = service.listar();
+        var pagina = service.listar(0, 2);
 
-        assertEquals(List.of(10L, 11L), lista.stream().map(TransacaoResponseDTO::getId).toList());
-        verify(userRepository).findById(7L);
+        assertEquals(List.of(11L, 10L), pagina.itens().stream().map(TransacaoResponseDTO::getId).toList());
+        assertTrue(pagina.temMais());
     }
 
     @Test
     void listaVaziaSemTransacoes() {
-        assertTrue(service.listar().isEmpty());
+        var pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "data", "id"));
+        when(repository.findByUserId(7L, pageable)).thenReturn(new SliceImpl<>(List.of(), pageable, false));
+        assertTrue(service.listar(0, 20).itens().isEmpty());
+    }
+
+    @Test
+    void buscaApenasTransacaoDoUsuario() {
+        Categoria mercado = categoria(1L, "Mercado", TipoTransacao.DESPESA, usuario);
+        when(repository.findByIdAndUserId(10L, 7L)).thenReturn(Optional.of(transacao(10L, "30.00", usuario, mercado)));
+
+        assertEquals(10L, service.buscar(10L).getId());
+        assertThrows(ResourceNotFoundException.class, () -> service.buscar(11L));
+    }
+
+    @Test
+    void recusaPaginaInvalida() {
+        assertThrows(BusinessRuleException.class, () -> service.listar(-1, 20));
+        assertThrows(BusinessRuleException.class, () -> service.listar(0, 51));
+    }
+
+    @Test
+    void listaSemanaEInformaSeHaDiasAnteriores() {
+        Categoria mercado = categoria(1L, "Mercado", TipoTransacao.DESPESA, usuario);
+        LocalDate inicio = LocalDate.of(2026, 10, 1);
+        LocalDate fim = inicio.plusDays(6);
+        Sort ordem = Sort.by(Sort.Direction.DESC, "data", "id");
+        when(repository.findByUserIdAndDataBetween(7L, inicio, fim, ordem))
+                .thenReturn(List.of(transacao(10L, "30.00", usuario, mercado)));
+        when(repository.existsByUserIdAndDataBefore(7L, inicio)).thenReturn(true);
+
+        var periodo = service.listarPeriodo(inicio, fim);
+
+        assertEquals(10L, periodo.itens().get(0).getId());
+        assertTrue(periodo.temAnteriores());
+        assertThrows(BusinessRuleException.class, () -> service.listarPeriodo(inicio, inicio.plusDays(32)));
     }
 
     @Test
@@ -181,12 +219,8 @@ class TransacaoServiceTest {
 
     @Test
     void dashboardSomaReceitasDespesasECalculaSaldo() {
-        Categoria salario = categoria(1L, "Salário", TipoTransacao.RECEITA, usuario);
-        Categoria mercado = categoria(2L, "Mercado", TipoTransacao.DESPESA, usuario);
-        usuario.getTransacoes().add(transacao(10L, "3000.00", usuario, salario));
-        usuario.getTransacoes().add(transacao(11L, "200.50", usuario, salario));
-        usuario.getTransacoes().add(transacao(12L, "450.25", usuario, mercado));
-        usuario.getTransacoes().add(transacao(13L, "3000.00", usuario, mercado));
+        when(repository.totalPorTipo(7L, TipoTransacao.RECEITA)).thenReturn(new BigDecimal("3200.50"));
+        when(repository.totalPorTipo(7L, TipoTransacao.DESPESA)).thenReturn(new BigDecimal("3450.25"));
 
         DashboardResponseDTO dashboard = service.getDashboard();
 
@@ -197,6 +231,8 @@ class TransacaoServiceTest {
 
     @Test
     void dashboardZeradoSemTransacoes() {
+        when(repository.totalPorTipo(7L, TipoTransacao.RECEITA)).thenReturn(BigDecimal.ZERO);
+        when(repository.totalPorTipo(7L, TipoTransacao.DESPESA)).thenReturn(BigDecimal.ZERO);
         DashboardResponseDTO dashboard = service.getDashboard();
 
         assertEquals(0, BigDecimal.ZERO.compareTo(dashboard.getTotalReceitas()));

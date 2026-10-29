@@ -2,8 +2,10 @@ package hanrry.cdg.services;
 
 import hanrry.cdg.dtos.DashboardResponseDTO;
 import hanrry.cdg.dtos.ResumoMensalResponseDTO;
+import hanrry.cdg.dtos.PeriodoTransacoesDTO;
 import hanrry.cdg.dtos.TransacaoRequestDTO;
 import hanrry.cdg.dtos.TransacaoResponseDTO;
+import hanrry.cdg.dtos.TransacoesPaginaDTO;
 import hanrry.cdg.exceptions.AccessDeniedException;
 import hanrry.cdg.exceptions.BusinessRuleException;
 import hanrry.cdg.exceptions.ResourceNotFoundException;
@@ -18,6 +20,8 @@ import hanrry.cdg.repositories.TransacaoRepository;
 import hanrry.cdg.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
@@ -28,6 +32,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -107,30 +112,37 @@ public class TransacaoService {
         return categoria;
     }
 
-    public List<TransacaoResponseDTO> listar() {
-        Long userId = Long.valueOf(SecurityContextHolder.getContext().getAuthentication().getName());
-        User user = userRepository.findById(userId).orElseThrow();
+    private static final Sort ORDEM_RECENTE = Sort.by(Sort.Direction.DESC, "data", "id");
 
-        return user.getTransacoes().stream()
-                .map(mapper::toDto)
-                .collect(Collectors.toList());
+    public TransacoesPaginaDTO listar(int pagina, int tamanho) {
+        if (pagina < 0 || tamanho < 1 || tamanho > 50) {
+            throw new BusinessRuleException("Informe página válida e tamanho entre 1 e 50.");
+        }
+        Long userId = Long.valueOf(SecurityContextHolder.getContext().getAuthentication().getName());
+        var resultado = repository.findByUserId(userId, PageRequest.of(pagina, tamanho, ORDEM_RECENTE));
+        return new TransacoesPaginaDTO(resultado.getContent().stream().map(mapper::toDto).toList(), resultado.hasNext());
+    }
+
+    public TransacaoResponseDTO buscar(Long id) {
+        Long userId = Long.valueOf(SecurityContextHolder.getContext().getAuthentication().getName());
+        return repository.findByIdAndUserId(id, userId).map(mapper::toDto)
+                .orElseThrow(() -> new ResourceNotFoundException("Transação não encontrada."));
+    }
+
+    public PeriodoTransacoesDTO listarPeriodo(LocalDate inicio, LocalDate fim) {
+        if (inicio == null || fim == null || inicio.isAfter(fim) || ChronoUnit.DAYS.between(inicio, fim) > 30) {
+            throw new BusinessRuleException("Informe um período válido de até 31 dias.");
+        }
+        Long userId = Long.valueOf(SecurityContextHolder.getContext().getAuthentication().getName());
+        var itens = repository.findByUserIdAndDataBetween(userId, inicio, fim, ORDEM_RECENTE).stream()
+                .map(mapper::toDto).toList();
+        return new PeriodoTransacoesDTO(itens, repository.existsByUserIdAndDataBefore(userId, inicio));
     }
 
     public DashboardResponseDTO getDashboard() {
         Long userId = Long.valueOf(SecurityContextHolder.getContext().getAuthentication().getName());
-        User user = userRepository.findById(userId).orElseThrow();
-
-        List<Transacao> transacoes = user.getTransacoes();
-
-        BigDecimal totalReceitas = transacoes.stream()
-                .filter(t -> t.getTipo() == TipoTransacao.RECEITA)
-                .map(Transacao::getValor)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalDespesas = transacoes.stream()
-                .filter(t -> t.getTipo() == TipoTransacao.DESPESA)
-                .map(Transacao::getValor)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalReceitas = repository.totalPorTipo(userId, TipoTransacao.RECEITA);
+        BigDecimal totalDespesas = repository.totalPorTipo(userId, TipoTransacao.DESPESA);
 
         BigDecimal saldo = totalReceitas.subtract(totalDespesas);
 
