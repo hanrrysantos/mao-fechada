@@ -129,8 +129,6 @@ function useTransactions(size = 20) {
 
   useEffect(() => {
     let active = true
-    setItems(null)
-    setPage(0)
     api<PaginaTransacoes>(`/transacoes?pagina=0&tamanho=${size}`, {}, session.token)
       .then((result) => { if (active) { setItems(result.itens); setHasMore(result.temMais) } })
       .catch((err: unknown) => { if (active) requestError(err, onUnauthorized, setError) })
@@ -152,7 +150,15 @@ function useTransactions(size = 20) {
     }
   }
 
-  return { items, error, hasMore, loadingMore, loadMore, reload: () => setVersion((value) => value + 1) }
+  function reload() {
+    setItems(null)
+    setPage(0)
+    setHasMore(false)
+    setError('')
+    setVersion((value) => value + 1)
+  }
+
+  return { items, error, hasMore, loadingMore, loadMore, reload }
 }
 
 // Converte o link t.me/<bot>?start=<código> no deep link equivalente do Telegram Web.
@@ -344,8 +350,6 @@ function FlowChart() {
 
   useEffect(() => {
     let active = true
-    setPeriod(null)
-    setError('')
     api<PeriodoTransacoes>(`/transacoes/periodo?inicio=${startKey}&fim=${endKey}`, {}, session.token)
       .then((result) => { if (active) setPeriod(result) })
       .catch((err: unknown) => { if (active) requestError(err, onUnauthorized, setError) })
@@ -375,6 +379,8 @@ function FlowChart() {
   function showPeriod(offset: number) {
     setPeriodOffset(offset)
     setSelected(6)
+    setPeriod(null)
+    setError('')
   }
 
   return (
