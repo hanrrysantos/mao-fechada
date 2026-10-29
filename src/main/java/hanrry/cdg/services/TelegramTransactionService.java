@@ -117,7 +117,7 @@ public class TelegramTransactionService {
 
     @Transactional
     public String confirmar(String id, Long telegramUserId) {
-        TransacaoPendenteTelegram pendente = pendingRepository.findById(id).orElse(null);
+        TransacaoPendenteTelegram pendente = pendingRepository.findByIdForUpdate(id).orElse(null);
         if (pendente == null || !pendente.getTelegramUserId().equals(telegramUserId)) {
             return "⏳ Esta confirmação expirou ou já foi usada. Envie a transação novamente.";
         }
@@ -167,7 +167,7 @@ public class TelegramTransactionService {
 
     @Transactional
     public String cancelar(String id, Long telegramUserId) {
-        TransacaoPendenteTelegram pendente = pendingRepository.findById(id).orElse(null);
+        TransacaoPendenteTelegram pendente = pendingRepository.findByIdForUpdate(id).orElse(null);
         if (pendente == null || !pendente.getTelegramUserId().equals(telegramUserId)) {
             return "⏳ Esta confirmação expirou ou já foi usada.";
         }
