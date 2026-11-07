@@ -3,6 +3,10 @@ package hanrry.cdg.repositories;
 import hanrry.cdg.models.Categoria;
 import hanrry.cdg.models.TipoTransacao;
 import hanrry.cdg.models.Transacao;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,9 +15,20 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface TransacaoRepository extends JpaRepository<Transacao, Long> {
     List<Transacao> findByUserId(Long userId);
+
+    @EntityGraph(attributePaths = "categoria")
+    Slice<Transacao> findByUserId(Long userId, Pageable pageable);
+
+    @EntityGraph(attributePaths = "categoria")
+    List<Transacao> findByUserIdAndDataBetween(Long userId, LocalDate inicio, LocalDate fim, Sort sort);
+
+    boolean existsByUserIdAndDataBefore(Long userId, LocalDate data);
+
+    Optional<Transacao> findByIdAndUserId(Long id, Long userId);
 
     long countByCategoriaId(Long categoriaId);
 

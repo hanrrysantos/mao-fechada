@@ -2,15 +2,17 @@ package hanrry.cdg.controllers;
 
 import hanrry.cdg.dtos.DashboardResponseDTO;
 import hanrry.cdg.dtos.ResumoMensalResponseDTO;
+import hanrry.cdg.dtos.PeriodoTransacoesDTO;
 import hanrry.cdg.dtos.TransacaoRequestDTO;
 import hanrry.cdg.dtos.TransacaoResponseDTO;
+import hanrry.cdg.dtos.TransacoesPaginaDTO;
 import hanrry.cdg.services.TransacaoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/transacoes")
@@ -30,8 +32,19 @@ public class TransacaoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TransacaoResponseDTO>> listar() {
-        return ResponseEntity.ok(service.listar());
+    public ResponseEntity<TransacoesPaginaDTO> listar(@RequestParam(defaultValue = "0") int pagina,
+                                                     @RequestParam(defaultValue = "20") int tamanho) {
+        return ResponseEntity.ok(service.listar(pagina, tamanho));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<TransacaoResponseDTO> buscar(@PathVariable Long id) {
+        return ResponseEntity.ok(service.buscar(id));
+    }
+
+    @GetMapping("/periodo")
+    public ResponseEntity<PeriodoTransacoesDTO> listarPeriodo(@RequestParam LocalDate inicio, @RequestParam LocalDate fim) {
+        return ResponseEntity.ok(service.listarPeriodo(inicio, fim));
     }
 
     @GetMapping("/dashboard")

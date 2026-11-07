@@ -150,6 +150,12 @@ class CategoriaServiceTest {
     }
 
     @Test
+    void recusaNomeMaiorQueAColunaDoBanco() {
+        assertThrows(BusinessRuleException.class, () -> service.criar(dto("a".repeat(256), TipoTransacao.DESPESA)));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
     void deletaCategoriaSemLancamentos() {
         Categoria categoria = categoria(1L, "Mercado", TipoTransacao.DESPESA);
         when(repository.findByIdAndUserId(1L, 7L)).thenReturn(Optional.of(categoria));

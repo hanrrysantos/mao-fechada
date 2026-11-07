@@ -11,6 +11,8 @@ export type Transacao = {
   nomeCategoria: string
   tipo: Tipo
 }
+export type PaginaTransacoes = { itens: Transacao[]; temMais: boolean }
+export type PeriodoTransacoes = { itens: Transacao[]; temAnteriores: boolean }
 export type Resumo = { totalReceitas: string; totalDespesas: string; saldo: string }
 export type ResumoCategoria = { id: number; nome: string; tipo: Tipo; total: string; quantidade: number; metaMensal?: string | null }
 export type ResumoMensal = {

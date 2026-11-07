@@ -113,7 +113,7 @@ describe('edit transaction', () => {
   it('pre-fills the form from the API and sends PUT', async () => {
     const { calls } = mockApi({
       'GET /categorias': { body: categorias },
-      'GET /transacoes': { body: [{ ...transacao, id: 6, descricao: 'Outro' }, transacao] },
+      'GET /transacoes/7': { body: transacao },
       'PUT /transacoes/7': { body: transacao },
       ['GET /transacoes/resumo?mes=' + currentMonth()]: { body: emptyResumo(currentMonth()) },
     })
@@ -143,9 +143,27 @@ describe('edit transaction', () => {
   })
 
   it('shows an error when the transaction does not exist', async () => {
-    mockApi({ 'GET /categorias': { body: categorias }, 'GET /transacoes': { body: [transacao] } })
+    mockApi({ 'GET /categorias': { body: categorias }, 'GET /transacoes/99': { status: 404, body: { message: 'Lançamento não encontrado.' } } })
     renderApp('/lancamentos/99/editar')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Lançamento não encontrado.')
+  })
+})
+
+describe('transaction history', () => {
+  it('loads another page when requested', async () => {
+    const base: Transacao = { id: 1, valor: '10.00', descricao: 'Primeira compra', data: '2026-10-05', categoriaId: 1, nomeCategoria: 'Mercado', tipo: 'DESPESA' }
+    const { calls } = mockApi({
+      ['GET /transacoes/resumo?mes=' + currentMonth()]: { body: emptyResumo(currentMonth()) },
+      'GET /transacoes?pagina=0&tamanho=20': { body: { itens: [base], temMais: true } },
+      'GET /transacoes?pagina=1&tamanho=20': { body: { itens: [{ ...base, id: 2, descricao: 'Compra antiga' }], temMais: false } },
+    })
+    const { user } = renderApp('/extrato')
+
+    expect(await screen.findByText('Primeira compra')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Carregar mais' }))
+    expect(await screen.findByText('Compra antiga')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Carregar mais' })).not.toBeInTheDocument()
+    expect(calls.filter((call) => call.path.startsWith('/transacoes?pagina='))).toHaveLength(2)
   })
 })
